@@ -1,4 +1,3 @@
-import { NotImplementedException } from '@nestjs/common';
 import { Mutation } from '@nestjs/graphql';
 import {
   Args,
@@ -10,30 +9,48 @@ import {
 } from '@nestjs/graphql';
 import { EmailFiltersArgs, UserEmail } from './email.types';
 import { User } from '../user/user.types';
+import { EmailService } from './email.service';
+import { EmailId } from './email.interfaces';
+import { Equal, FindOptionsWhere, In, Repository } from 'typeorm';
+import { EmailEntity } from './email.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserService } from '../user/user.service';
 
 @Resolver(() => UserEmail)
 export class EmailResolver {
+  constructor(
+    private readonly _service: EmailService,
+    private readonly _userservice: UserService,
+    @InjectRepository(EmailEntity)
+    private readonly emailRepository: Repository<EmailEntity>,
+  ) {}
+
   @Query(() => UserEmail, { name: 'email' })
-  getEmail(@Args({ name: 'emailId', type: () => ID }) emailId: string) {
-    // TODO IMPLEMENTATION
-    // Récupérer une adresse email par rapport à son identifiant
-    throw new NotImplementedException();
+  getEmail(@Args({ name: 'emailId', type: () => ID }) emailId: EmailId) {
+    return this._service.get(emailId);
   }
 
   @Query(() => [UserEmail], { name: 'emailsList' })
   async getEmails(@Args() filters: EmailFiltersArgs): Promise<UserEmail[]> {
-    // TODO IMPLEMENTATION
-    // Récupérer une liste d'e-mails correspondants à des filtres
+    const where: FindOptionsWhere<EmailEntity> = {};
 
-    // Je pense qu'on pourrait essayer de refactoriser pour réutiliser
-    // la même chose que dans UserResolver pour récupérer les emails
-    throw new NotImplementedException();
+    if (filters.address) {
+      if (!filters.address.in?.length && filters.address.equal) {
+        where.address = Equal(filters.address.equal);
+      }
+      if (filters.address.in?.length > 0) {
+        where.address = In([...filters.address.in, filters.address.equal]);
+      }
+    }
+
+    return this.emailRepository.find({
+      where,
+      order: { address: 'asc' },
+    });
   }
 
   @ResolveField(() => User, { name: 'user' })
   async getUser(@Parent() parent: UserEmail): Promise<User> {
-    // TODO IMPLEMENTATION
-    // Récupérer l'utilisateur à qui appartient l'email
-    throw new NotImplementedException();
+    return this._userservice.get(parent.userId);
   }
 }
