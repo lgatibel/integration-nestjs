@@ -48,12 +48,11 @@ export class UserResolver {
     };
 
     if (filters.address) {
-      if (filters.address.equal) {
+      if (!filters.address.in?.length && filters.address.equal) {
         where.address = Equal(filters.address.equal);
       }
-
       if (filters.address.in?.length > 0) {
-        where.address = In(filters.address.in);
+        where.address = In([...filters.address.in, filters.address.equal]);
       }
     }
 
