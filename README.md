@@ -1,4 +1,4 @@
-![](https://github.com/lgatibel/integration-nestjs/actions/workflows/e2e.yml/badge.svg?branch=test-ci)
+![](https://github.com/lgatibel/integration-nestjs/actions/workflows/e2e.yml/badge.svg?branch=main)
 
 [playground]: http://localhost:3000/graphql
 [specs]: ./test/app.e2e-spec.ts
