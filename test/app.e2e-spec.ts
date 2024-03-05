@@ -264,4 +264,64 @@ describe('Tests e2e', () => {
       });
     });
   });
+
+  describe('[Mutation] email', () => {
+    it(`Devrait modifier un email`, () => {
+      return request(app.getHttpServer())
+        .post('/graphql')
+        .send({
+          query: `mutation {updateEmail(id:"${knownUser.emails[0].id}", address: "${email3.address}")}`,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.data.updateEmail).toBeDefined();
+        });
+    });
+
+    it(`Devrait retourné une erreur pour un email non existant`, () => {
+      const badEmailId = '1' + [...knownUser.emails[0].id.slice(1)].join('');
+
+      return request(app.getHttpServer())
+        .post('/graphql')
+        .send({
+          query: `mutation {updateEmail(id:"${badEmailId}", address: "${email3.address}")}`,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.errors?.[0]?.message).toBe(
+            "L'email n'a pas été trouvé",
+          );
+        });
+    });
+
+    it(`Devrait retouner une erreur pour un email non valide`, () => {
+      return request(app.getHttpServer())
+        .post('/graphql')
+        .send({
+          query: `mutation {updateEmail(id:"${knownUser.emails[0].id}", address: "test@test")}`,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.errors?.[0]?.message).toBe('Bad Request Exception');
+        });
+    });
+  });
+
+  describe('[Mutation] inactive user ', () => {
+    it(`Devrait renvoyer une erreur`, async () => {
+      await userRepo.update(knownUserId, { status: 'inactive' });
+
+      return request(app.getHttpServer())
+        .post('/graphql')
+        .send({
+          query: `mutation {updateEmail(id:"${knownUser.emails[0].id}", address: "${email3.address}")}`,
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.errors?.[0]?.message).toBe(
+            "L'utilisateur est desactivé, modification impossible",
+          );
+        });
+    });
+  });
 });
